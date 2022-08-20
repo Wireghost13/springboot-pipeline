@@ -24,7 +24,7 @@ openshift.withCluster() {
     def buildConfigExists = openshift.selector("bc", "springboot-pipeline").exists() 
     
     if(!buildConfigExists){ 
-      openshift.newBuild("--name=springboot-pipeline", "--docker-image=docker.io/centos:7", "--binary") 
+      openshift.newBuild("--name=springboot-pipeline", "--docker-image=docker.io/openjdk:11", "--binary") 
     } 
     
     openshift.selector("bc", "springboot-pipeline").startBuild("--from-file=target/helloworld-0.0.1-SNAPSHOT.jar", "--follow") } }
