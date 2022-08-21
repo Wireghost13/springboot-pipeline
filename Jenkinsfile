@@ -9,52 +9,50 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        echo 'Building..'
+        echo 'Building...'
           sh 'mvn clean package'
       }
     }
-    stage('Create Container Image') {
-      steps {
-        echo 'Create Container Image..'
-        
-        script {
-openshift.withCluster() { 
-  openshift.withProject("microservices-oc") {
-  
-    def buildConfigExists = openshift.selector("bc", "springboot-pipeline").exists() 
     
-    if(!buildConfigExists){ 
-      openshift.newBuild("--name=springboot-pipeline", "--docker-image=docker.io/registry.redhat.io/jboss-eap-7/eap74-openjdk8-openshift-rhel7", "--binary") 
-    } 
-    
-    openshift.selector("bc", "springboot-pipeline").startBuild("--from-file=target/helloworld-0.0.1-SNAPSHOT.jar", "--follow") } }
+        stage('Create Image Builder') {
 
-        }
-      }
-    }
-    stage('Deploy') {
-      steps {
-        echo 'Deploying....'
-        script {
+            when {
+              expression {
+                openshift.withCluster() {
+                  openshift.withProject("microservices-oc") {
+                    return !openshift.selector("bc", "springpipe-hello").exists()
+                  }
+                }
+              }
+            }
+            steps {
+              script {
+                openshift.withCluster() {
+                  openshift.withProject("microservices-oc") {
+                    openshift.newBuild("--name=springpipe-hello", "--image-stream=redhat-openjdk18-openshift:latest", "--binary=true")
+                  }
+                }
+              }
+            }
+          }
 
-         openshift.withCluster() { 
-  openshift.withProject("microservices-oc") { 
-    def deployment = openshift.selector("dc", "springboot-pipeline") 
-    
-    if(!deployment.exists()){ 
-      openshift.newApp('springboot-pipeline', "--as-deployment-config").narrow('svc').expose() 
-    } 
-    
-    timeout(5) { 
-      openshift.selector("dc", "springboot-pipeline").related('pods').untilEach(1) { 
-        return (it.object().status.phase == "Running") 
-      } 
-    } 
-  } 
-}
 
-        }
-      }
-    }
+
+          stage('Build Image') {
+            steps {
+              sh "rm -rf ocp && mkdir -p ocp/deployments"
+              sh "pwd && ls -la target "
+              sh "cp target/helloworld-*.jar ocp/deployments"
+
+              script {
+                openshift.withCluster() {
+                  openshift.withProject("microservices-oc") {
+                    openshift.selector("bc", "springpipe-hello").startBuild("--from-dir=./ocp","--follow", "--wait=true")
+                  }
+                }
+              }
+            }
+          }
+
   }
 }
