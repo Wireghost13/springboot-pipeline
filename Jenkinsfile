@@ -29,7 +29,7 @@ pipeline {
               script {
                 openshift.withCluster() {
                   openshift.withProject("microservices-oc") {
-                    openshift.newBuild("--name=springpipe-hello", "--docker-image=docker.io/fabric8/java-centos-openjdk11-jdk", "--binary=true")
+                    openshift.newBuild("--name=javafabric8", "--docker-image=docker.io/fabric8/java-centos-openjdk11-jdk", "--binary=true")
                   }
                 }
               }
