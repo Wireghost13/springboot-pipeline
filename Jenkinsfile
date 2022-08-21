@@ -29,7 +29,7 @@ pipeline {
               script {
                 openshift.withCluster() {
                   openshift.withProject("microservices-oc") {
-                    openshift.newBuild("--name=springpipe-hello", "--image-stream=redhat-openjdk18-openshift:latest", "--binary=true")
+                    openshift.newBuild("--name=springpipe-hello", "--docker-image=docker.io/openjdk:11", "--binary=true")
                   }
                 }
               }
